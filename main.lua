@@ -13,6 +13,7 @@ function love.load()
 			x = 0,
 			y = 0,
 			grounded = false,
+			ceiled = false,
 			gravity = 0.25,
 			drag = 40,
 			jump_force = 11
@@ -65,6 +66,12 @@ function love.load()
 		h = 20
 	})
 	Colliders.add({
+		x = 250,
+		y = 100,
+		w = 20,
+		h = 150
+	})
+	Colliders.add({
 		x = 600,
 		y = 150,
 		w = 200,
@@ -83,8 +90,8 @@ function love.draw()
 	love.graphics.rectangle("fill", player.x, player.y, player.w, player.h)
 	love.graphics.setColor(255, 255, 255)
 
-	love.graphics.print(tostring(player.velocity.grounded), 10, 10)
-	love.graphics.print(tostring(player.velocity.y), 10, 30)
+	love.graphics.print(tostring(player.velocity.grounded), 30, 30)
+	love.graphics.print(tostring(player.velocity.y), 30, 50)
 
 	if Colliders.isColliding("top", player) ~= nil then
 		love.graphics.setColor(0, 255, 0)
@@ -118,35 +125,28 @@ function love.update()
 	-- PLAYER MOVEMENT
 	player.velocity.x = 0
 
-	-- GRAVITY
-	colliderT = Colliders.isColliding("bottom", player)
-	colliderB = Colliders.isColliding("top", player)
+	local colliderB = Colliders.isColliding("bottom", player)
+	local colliderT = Colliders.isColliding("top", player)
+	player.velocity.grounded = false
 
-	if player.velocity.y >= 0 and colliderT ~= nil then
+	if colliderT and player.velocity.y < 0 then
+		player.y = colliderT.y + colliderT.h
 		player.velocity.y = 0
-		player.velocity.grounded = true
-		player.y = colliderT.y - player.h
-	else
-		if colliderB ~= nil then
-			player.y = colliderB.y + colliderB.h
-			player.velocity.y = 0
-		else
-			player.velocity.y = player.velocity.y + player.velocity.gravity
-		end
+	end
 
-		player.velocity.grounded = false
+	if colliderB and player.velocity.y >= 0 then
+		player.velocity.grounded = true
+		player.velocity.y = 0
+		player.y = colliderB.y - player.h
+	else
+		player.velocity.y = player.velocity.y + player.velocity.gravity
 
 		if player.velocity.y > player.velocity.drag then
 			player.velocity.y = player.velocity.drag
 		end
 	end
 
-	-- JUMPING
-	if love.keyboard.isDown("w") and player.y > 0
-		and player.velocity.grounded == true then
-		player.velocity.y = -player.velocity.jump_force
-	end
-
+	-- GRAVITY
 	if love.keyboard.isDown("a") then
 		local collider = Colliders.isColliding("left", player)
 		
@@ -167,8 +167,15 @@ function love.update()
 		end
 	end
 
-	player.x = math.ceil(player.x + player.velocity.x)
-	player.y = math.ceil(player.y + player.velocity.y)
+	-- JUMPING
+	if love.keyboard.isDown("w")
+		and player.velocity.grounded == true
+		and colliderT == nil then
+		player.velocity.y = -player.velocity.jump_force
+	end
+
+	player.x = player.x + player.velocity.x
+	player.y = player.y + player.velocity.y
 end
 
 function love.run()
