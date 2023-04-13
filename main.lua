@@ -1,3 +1,5 @@
+require "Core"
+require "Core/Map"
 require "Colliders"
 
 local TICKRATE = 1/144
@@ -9,6 +11,18 @@ function love.load()
 		w = 50,
 		h = 50,
 		speed = 4,
+		hook = {
+			x = 0,
+			y = 0,
+			w = 5,
+			h = 5,
+			angle = 0,
+			speed = 5,
+			shot = false,
+			hooked = false,
+			hX = 0,
+			hY = 0
+		},
 		velocity = {
 			x = 0,
 			y = 0,
@@ -20,70 +34,22 @@ function love.load()
 		}
 	}
 
-	-- BORDERS
-	Colliders.add({
-		x = 0,
-		y = 0,
-		w = 800,
-		h = 20
-	})
-	Colliders.add({
-		x = 780,
-		y = 0,
-		w = 20,
-		h = 800
-	})
-	Colliders.add({
-		x = 0,
-		y = 580,
-		w = 800,
-		h = 20
-	})
-	Colliders.add({
-		x = 0,
-		y = 0,
-		w = 20,
-		h = 800
-	})
-
-	Colliders.add({
-		x = 200,
-		y = 400,
-		w = 200,
-		h = 200
-	})
-
-	Colliders.add({
-		x = 400,
-		y = 450,
-		w = 200,
-		h = 50
-	})
-	Colliders.add({
-		x = 250,
-		y = 100,
-		w = 200,
-		h = 20
-	})
-	Colliders.add({
-		x = 250,
-		y = 100,
-		w = 20,
-		h = 150
-	})
-	Colliders.add({
-		x = 600,
-		y = 150,
-		w = 200,
-		h = 10
-	})
+	Colliders.load()
 
 	w, h = love.graphics.getDimensions()
 end
 
 function love.draw()
-	for index, platform in pairs(Colliders.objects) do
-		love.graphics.rectangle("fill", platform.x, platform.y, platform.w, platform.h)
+	for index, object in pairs(Map.getObjects()) do
+		local transform = object.components.transform
+
+		love.graphics.rectangle(
+			"fill",
+			transform.x,
+			transform.y,
+			transform.w,
+			transform.h
+		)
 	end
 
 	love.graphics.setColor(255, 0, 0)
@@ -119,6 +85,27 @@ function love.draw()
 
 	love.graphics.print(tostring(player.x), player.x + 5, player.y + 5)
 	love.graphics.print(tostring(player.y), player.x + 5, player.y + 20)
+
+	local mX, mY = love.mouse.getPosition()
+
+	love.graphics.setColor(0, 255, 0)
+	love.graphics.rectangle("fill", mX - 2, mY - 22, 4, 20)
+	love.graphics.rectangle("fill", mX - 2, mY + 2, 4, 20)
+	love.graphics.rectangle("fill", mX - 22, mY - 2, 20, 4)
+	love.graphics.rectangle("fill", mX + 2, mY - 2, 20, 4)
+	love.graphics.setColor(255, 255, 255)
+
+	if player.hook.shot then
+		love.graphics.setColor(255, 255, 0)
+		love.graphics.circle("fill", player.hook.x, player.hook.y, player.hook.w)
+		love.graphics.setColor(255, 255, 255)
+	end
+
+	if player.hook.hooked then
+		love.graphics.setColor(255, 255, 0)
+		love.graphics.line(player.x + player.w / 2, player.y + player.h / 2, player.hook.hX, player.hook.hY)
+		love.graphics.setColor(255, 255, 255)
+	end
 end
 
 function love.update()
@@ -193,8 +180,54 @@ function love.update()
 		player.x = colliderR.x - player.w
 	end
 
-	player.x = player.x + player.velocity.x
-	player.y = player.y + player.velocity.y
+	player.x = math.ceil(player.x + player.velocity.x)
+	player.y = math.ceil(player.y + player.velocity.y)
+
+	-- HOOKSHOT
+	if player.hook.shot then
+		local hookCollider = Colliders.isColliding("full", player.hook)
+
+		if hookCollider then
+			player.hook.hX = player.hook.x
+			player.hook.hY = player.hook.y
+			player.hook.shot = false
+			player.hook.hooked = true
+		end
+
+		player.hook.x = player.hook.x
+            + -math.sin(player.hook.angle)
+            * player.hook.speed
+        player.hook.y = player.hook.y
+            + -math.cos(player.hook.angle)
+            * player.hook.speed
+	end
+
+	if love.keyboard.isDown("e") and player.hook.hooked then
+		player.x = player.x
+            + -math.sin(Core.getAngleOfTwoPoints(
+            	{
+	            	x = player.x,
+	            	y = player.y
+            	},
+            	{
+            		x = player.hook.x,
+            		y = player.hook.y
+            	}
+        	))
+            * player.speed
+        player.y = player.y
+            + -math.cos(Core.getAngleOfTwoPoints(
+            	{
+	            	x = player.x,
+	            	y = player.y
+            	},
+            	{
+            		x = player.hook.x,
+            		y = player.hook.y
+            	}
+        	))
+            * player.speed
+	end
 end
 
 function love.keypressed(key, scancode, isrepeat)
@@ -225,6 +258,28 @@ function love.keypressed(key, scancode, isrepeat)
 		end
 
 		player.y = player.y + player.velocity.y
+	end
+
+	if key == "q" then
+		player.hook.hooked = false
+	end
+end
+
+function love.mousepressed(x, y, button)
+	if button == 1 and not player.hook.shot then
+		player.hook.x = player.x + player.w / 2
+		player.hook.y = player.y + player.h / 2
+		player.hook.angle = Core.getAngleOfTwoPoints(
+			{
+				x = player.x,
+				y = player.y
+			},
+			{
+				x = x,
+				y = y
+			}
+		)
+		player.hook.shot = true
 	end
 end
 
