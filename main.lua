@@ -13,10 +13,10 @@ function love.load()
 			x = 0,
 			y = 0,
 			grounded = false,
-			ceiled = false,
+			walled = false,
 			gravity = 0.25,
-			drag = 40,
-			jump_force = 11
+			drag = 10,
+			jump_force = 10
 		}
 	}
 
@@ -61,7 +61,7 @@ function love.load()
 	})
 	Colliders.add({
 		x = 250,
-		y = 300,
+		y = 100,
 		w = 200,
 		h = 20
 	})
@@ -123,11 +123,17 @@ end
 
 function love.update()
 	-- PLAYER MOVEMENT
-	player.velocity.x = 0
-
-	local colliderB = Colliders.isColliding("bottom", player)
 	local colliderT = Colliders.isColliding("top", player)
+	local colliderR = Colliders.isColliding("right", player)
+	local colliderB = Colliders.isColliding("bottom", player)
+	local colliderL = Colliders.isColliding("left", player)
+
+	if colliderB then
+		player.velocity.x = 0
+	end
+
 	player.velocity.grounded = false
+	player.velocity.walled = false
 
 	if colliderT and player.velocity.y < 0 then
 		player.y = colliderT.y + colliderT.h
@@ -139,43 +145,87 @@ function love.update()
 		player.velocity.y = 0
 		player.y = colliderB.y - player.h
 	else
-		player.velocity.y = player.velocity.y + player.velocity.gravity
+		local falling_speed = player.velocity.gravity
+		local falling_drag = player.velocity.drag
 
-		if player.velocity.y > player.velocity.drag then
-			player.velocity.y = player.velocity.drag
+		if colliderL or colliderR then
+			player.velocity.walled = true
+
+			if player.velocity.y >= 0 then
+				falling_speed = falling_speed / 10
+				falling_drag = falling_drag
+			end
+		end
+
+		player.velocity.y = player.velocity.y + falling_speed
+
+		if player.velocity.y > falling_drag then
+			player.velocity.y = falling_drag
 		end
 	end
 
-	-- GRAVITY
+	-- WALKING
 	if love.keyboard.isDown("a") then
-		local collider = Colliders.isColliding("left", player)
-		
-		if collider ~= nil then
-			player.x = collider.x + collider.w
-		else
+		if not player.velocity.walled then
 			player.velocity.x = -player.speed
 		end
 	end
 
-	if love.keyboard.isDown("d") then
-		local collider = Colliders.isColliding("right", player)
+	if colliderL ~= nil then
+		if player.velocity.x < 0 then
+			player.velocity.x = 0
+		end
 
-		if collider ~= nil then
-			player.x = collider.x - player.w
-		else
+		player.x = colliderL.x + colliderL.w
+	end
+
+	if love.keyboard.isDown("d") then
+		if not player.velocity.walled then
 			player.velocity.x = player.speed
 		end
 	end
 
-	-- JUMPING
-	if love.keyboard.isDown("w")
-		and player.velocity.grounded == true
-		and colliderT == nil then
-		player.velocity.y = -player.velocity.jump_force
+	if colliderR ~= nil then
+		if player.velocity.x > 0 then
+			player.velocity.x = 0
+		end
+
+		player.x = colliderR.x - player.w
 	end
 
 	player.x = player.x + player.velocity.x
 	player.y = player.y + player.velocity.y
+end
+
+function love.keypressed(key, scancode, isrepeat)
+	if key == "escape" then
+		love.event.quit()
+	end
+
+	if key == "w" then
+		if Colliders.isColliding("top", player) then
+			return
+		end
+
+		if player.velocity.grounded then
+			player.velocity.y = -player.velocity.jump_force
+		end
+
+		if player.velocity.walled and not player.velocity.grounded and player.velocity.y > 0 then
+			player.velocity.y = -player.velocity.jump_force
+
+			local colliderL = Colliders.isColliding("left", player)
+			local colliderR = Colliders.isColliding("right", player)
+			
+			if colliderL then
+				player.velocity.x = player.velocity.jump_force
+			elseif colliderR then
+				player.velocity.x = -player.velocity.jump_force
+			end
+		end
+
+		player.y = player.y + player.velocity.y
+	end
 end
 
 function love.run()
