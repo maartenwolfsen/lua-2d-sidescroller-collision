@@ -1,5 +1,6 @@
 Button = {}
 Button.__index = Button
+Button.__name = "Button"
 
 function Button:new(
 	text,
@@ -12,15 +13,14 @@ function Button:new(
 	color_a
 )
 	local button = {}
-	local font = love.graphics.getFont()
 
 	setmetatable(button, Button)
 
-	button.id = text
+	button.font = love.graphics.getFont()
 	button.x = x
 	button.y = y
-	button.w = font:getWidth(text) + padding.right + padding.left
-	button.h = font:getHeight(text) + padding.top + padding.bottom
+	button.w = button.font:getWidth(text) + padding.right + padding.left
+	button.h = button.font:getHeight(text) + padding.top + padding.bottom
 	button.padding = padding
 	button.text = text
 	button.color = {
@@ -86,8 +86,6 @@ function Button:setHover(hover)
 end
 
 function Button:draw()
-	local x, y = self:getPosition()
-	local padding = self:getPadding()
 	local color = self.color
 
 	if self:getHover() then
@@ -97,16 +95,16 @@ function Button:draw()
 	love.graphics.setColor(color.r, color.g, color.b, color.a)
 	love.graphics.rectangle(
 		"fill",
-		x,
-		y,
+		self.x,
+		self.y,
 		self:getWidth(),
 		self:getHeight()
 	)
 	love.graphics.setColor(0, 0, 0)
 	love.graphics.print(
 		self:getText(),
-		x + padding.left,
-		y + padding.top
+		self.x + self.padding.left,
+		self.y + self.padding.top
 	)
 	love.graphics.setColor(1, 1, 1)
 end

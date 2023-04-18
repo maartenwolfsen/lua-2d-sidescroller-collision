@@ -1,6 +1,7 @@
 require "const"
 require "Core/Map"
 require "Core/Editor/Ui/Button"
+require "Core/Editor/Ui/Input"
 
 Ui = {
 	objects = Map.getObjects(),
@@ -33,6 +34,28 @@ Ui.load = function()
 		button:onClick(function()
 			Ui.inspector.selected_object = object
 			Ui.inspector.selected_object.name = index
+
+			for index, component in pairs(Ui.inspector.selected_object.components) do
+				for property, value in pairs(component) do
+					table.insert(
+						Ui.inspector.ui_objects,
+						Input:new(
+							property,
+							value,
+							WINDOW.w - 740,
+							40 + 50 * i,
+							200,
+							{
+								top = 5,
+								right = 10,
+								bottom = 5,
+								left = 10
+							}
+						)
+					)
+					i = i + 1
+				end
+			end
 		end)
 
 		table.insert(
@@ -48,12 +71,14 @@ Ui.update = function()
 	local mX, mY = love.mouse.getPosition()
 
 	for i, o in pairs(Ui.inspector.ui_objects) do
-		if mX > o.x and mX < o.x + o.w and mY > o.y
-			and mY < o.y + o.h and not o:getHover() then
-			o:setHover(true)
-		else
-			if o:getHover() then
-				o:setHover(false)
+		if o.__name == "Button" then
+			if mX > o.x and mX < o.x + o.w and mY > o.y
+				and mY < o.y + o.h and not o:getHover() then
+				o:setHover(true)
+			else
+				if o:getHover() then
+					o:setHover(false)
+				end
 			end
 		end
 	end
@@ -78,17 +103,18 @@ Ui.draw = function()
 		love.graphics.line(WINDOW.w - 780, 40, WINDOW.w - 420, 40)
 
 		if Ui.inspector.selected_object.name ~= "None" then
-			local i = 1
+			--[[local i = 1
 
 			for index, component in pairs(Ui.inspector.selected_object.components) do
 				love.graphics.print(index, WINDOW.w - 780, 40 + 20 * i)
 				i = i + 1
 
 				for index, property in pairs(component) do
+
 					love.graphics.print(index .. ": " .. property, WINDOW.w - 740, 40 + 20 * i)
 					i = i + 1
 				end
-			end
+			end]]--
 		end
 
 		-- EDIT
