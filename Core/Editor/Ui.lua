@@ -1,8 +1,11 @@
 require "const"
 require "Core/Map"
+require "Core/Editor/Ui/Button"
+
 Ui = {
 	objects = Map.getObjects(),
 	inspector = {
+		ui_objects = {},
 		edit = false,
 		selected_object = {
 			name = "None"
@@ -11,23 +14,62 @@ Ui = {
 }
 
 Ui.load = function()
+	local i = 1
+
+	for index, object in pairs(Ui.objects) do
+		local button = Button:new(
+			index,
+			WINDOW.w - 380,
+			20 + 40 * i,
+			{
+				top = 5,
+				right = 20,
+				bottom = 5,
+				left = 20
+			},
+			love.math.colorFromBytes(230, 105, 100, 255)
+		)
+
+		button:onClick(function()
+			Ui.inspector.selected_object = object
+			Ui.inspector.selected_object.name = index
+		end)
+
+		table.insert(
+			Ui.inspector.ui_objects,
+			button
+		)
+
+		i = i + 1
+	end
 end
 
 Ui.update = function()
+	local mX, mY = love.mouse.getPosition()
+
+	for i, o in pairs(Ui.inspector.ui_objects) do
+		if mX > o.x and mX < o.x + o.w and mY > o.y
+			and mY < o.y + o.h and not o:getHover() then
+			o:setHover(true)
+		else
+			if o:getHover() then
+				o:setHover(false)
+			end
+		end
+	end
 end
 
 Ui.draw = function()
 	if MODE == MODE_EDITOR then
+		-- DRAW UI OBJECTS
+		for i, o in pairs(Ui.inspector.ui_objects) do
+			o:draw()
+		end
+
 		-- OBJECTS
 		love.graphics.rectangle("line", WINDOW.w - 400, 0, 400, WINDOW.h)
 		love.graphics.print("Objects", WINDOW.w - 380, 20)
 		love.graphics.line(WINDOW.w - 380, 40, WINDOW.w - 20, 40)
-		local i = 1
-
-		for index, object in pairs(Ui.objects) do
-			love.graphics.print(index, WINDOW.w - 380, 40 + 20 * i)
-			i = i + 1
-		end
 
 		-- COMPONENTS
 		love.graphics.rectangle("line", WINDOW.w - 800, 0, 400, WINDOW.h)
@@ -54,7 +96,9 @@ Ui.draw = function()
 		love.graphics.print("Edit value: ", WINDOW.w - 780, WINDOW.h - 80)
 	end
 
+	-- MOUSE CROSSHAIR
 	local mX, mY = love.mouse.getPosition()
+	love.graphics.print("Mouse: {x: " .. mX .. "; y: " .. mY .. "}", 20, WINDOW.h - 20)
 	if mX <= EDITOR.w and mY <= EDITOR.h then
 		love.graphics.setColor(0, 255, 0)
 		love.graphics.rectangle("fill", mX - 2, mY - 22, 4, 20)
@@ -66,16 +110,9 @@ Ui.draw = function()
 end
 
 Ui.mousePress = function(x, y, button)
-	local i = 1
-	for index, object in pairs(Ui.objects) do
-		local ox = WINDOW.w - 380
-		local oy = 40 + 20 * i
-
-		if x > ox and x < ox + 340 and y > oy and y < oy + 20 then
-			Ui.inspector.selected_object = object
-			Ui.inspector.selected_object.name = index
+	for index, o in pairs(Ui.inspector.ui_objects) do
+		if x > o.x and x < o.x + o.w and y > o.y and y < o.y + o.h then
+			o.click()
 		end
-
-		i = i + 1
 	end
 end

@@ -1,6 +1,6 @@
 require "const"
 require "Core/Math"
-require "Core/Ui"
+require "Core/Editor/Ui"
 require "Core/Map"
 require "Colliders"
 require "Player"
@@ -29,6 +29,7 @@ end
 
 function love.update()
 	Player.update()
+	Ui.update()
 end
 
 function love.keypressed(key, scancode, isrepeat)
