@@ -52,22 +52,39 @@ Ui.load = function()
 				local margin_item = margin
 
 				for property, value in pairs(component) do
+					local input = Input:new(
+						property,
+						value,
+						WINDOW.w - 740,
+						margin_item + 40 + 50 * inspector_i,
+						200,
+						{
+							top = 5,
+							right = 10,
+							bottom = 5,
+							left = 10
+						}
+					)
+
+					input:onClick(function()
+						for i, o in pairs(Ui.inspector.ui_objects) do
+							if o.__name == "UiGroup" then
+								for i_c, o_c in pairs(o.children) do
+									if o_c.__name == "Input" then
+										o_c.focus = false
+									end
+								end
+							end
+						end
+
+						input.focus = true
+					end)
+
 					table.insert(
 						selected_ui_objects,
-						Input:new(
-							property,
-							value,
-							WINDOW.w - 740,
-							margin_item + 40 + 50 * inspector_i,
-							200,
-							{
-								top = 5,
-								right = 10,
-								bottom = 5,
-								left = 10
-							}
-						)
+						input
 					)
+
 					inspector_i = inspector_i + 1
 				end
 
@@ -181,11 +198,19 @@ end
 Ui.mousePress = function(x, y, button)
 	for index, o in pairs(Ui.inspector.ui_objects) do
 		if o.__name == "UiGroup" then
-			return
-		end
-
-		if x > o.x and x < o.x + o.w and y > o.y and y < o.y + o.h then
-			o.click()
+			for index, o_item in pairs(o.children) do
+				if x > o_item.x
+					and x < o_item.x + o_item.w
+					and y > o_item.y + 20
+					and y < o_item.y + o_item.h + 20 then
+					print("test")
+					return o_item.click()
+				end
+			end
+		else
+			if x > o.x and x < o.x + o.w and y > o.y and y < o.y + o.h then
+				return o.click()
+			end
 		end
 	end
 end

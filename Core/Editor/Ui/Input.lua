@@ -1,6 +1,6 @@
 Input = {}
 Input.__index = Input
-Button.__name = "Input"
+Input.__name = "Input"
 
 function Input:new(label, value, x, y, w, padding)
 	local input = {}
@@ -15,6 +15,7 @@ function Input:new(label, value, x, y, w, padding)
 	input.padding = padding
 	input.label = label
 	input.value = value
+	input.focus = false
 
 	table.insert(
 		Ui,
@@ -50,6 +51,11 @@ function Input:draw()
 		self.x,
 		self.y
 	)
+
+	if self.focus then
+		love.graphics.setColor(love.math.colorFromBytes(255, 0, 0, 255))
+	end
+
 	love.graphics.rectangle(
 		"line",
 		self.x,
@@ -57,9 +63,22 @@ function Input:draw()
 		self.w,
 		self.h
 	)
+
+	if self.focus then
+		love.graphics.setColor(love.math.colorFromBytes(255, 255, 255, 255))
+	end
+
 	love.graphics.print(
 		tostring(self.value),
 		self.x + self.padding.left,
 		self.y + self.font:getHeight(self.label) + 5 + self.padding.top
 	)
+end
+
+function Input:onClick(callback)
+	self.click = callback
+end
+
+function Input:click()
+	self.click()
 end
