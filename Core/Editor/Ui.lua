@@ -2,6 +2,7 @@ require "const"
 require "Core/Map"
 require "Core/Editor/Ui/Button"
 require "Core/Editor/Ui/Input"
+require "Core/Editor/Ui/UiGroup"
 
 Ui = {
 	objects = Map.getObjects(),
@@ -34,16 +35,30 @@ Ui.load = function()
 		button:onClick(function()
 			Ui.inspector.selected_object = object
 			Ui.inspector.selected_object.name = index
+			local inspector_i = 1
+
+			for ui_index, o in pairs(Ui.inspector.ui_objects) do
+				if o.__name == "UiGroup" then
+					table.remove(
+						Ui.inspector.ui_objects,
+						ui_index
+					)
+				end
+			end
+			local margin = 0
 
 			for index, component in pairs(Ui.inspector.selected_object.components) do
+				local selected_ui_objects = {}
+				local margin_item = margin
+
 				for property, value in pairs(component) do
 					table.insert(
-						Ui.inspector.ui_objects,
+						selected_ui_objects,
 						Input:new(
 							property,
 							value,
 							WINDOW.w - 740,
-							40 + 50 * i,
+							margin_item + 40 + 50 * inspector_i,
 							200,
 							{
 								top = 5,
@@ -53,8 +68,18 @@ Ui.load = function()
 							}
 						)
 					)
-					i = i + 1
+					inspector_i = inspector_i + 1
 				end
+
+				table.insert(
+					Ui.inspector.ui_objects,
+					UiGroup:new(
+						index,
+						selected_ui_objects
+					)
+				)
+
+				margin = margin + 40
 			end
 		end)
 
@@ -88,7 +113,25 @@ Ui.draw = function()
 	if MODE == MODE_EDITOR then
 		-- DRAW UI OBJECTS
 		for i, o in pairs(Ui.inspector.ui_objects) do
-			o:draw()
+			if o.__name == "UiGroup" then
+				local margin = -20
+
+				for i_c, o_c in pairs(o.children) do
+					if margin ~= 0 then
+						love.graphics.print(
+							o.id,
+							o_c.x + margin,
+							o_c.y + margin
+						)
+					end
+
+					margin = 0
+
+					o_c:draw()
+				end
+			else
+				o:draw()
+			end
 		end
 
 		-- OBJECTS
@@ -137,6 +180,10 @@ end
 
 Ui.mousePress = function(x, y, button)
 	for index, o in pairs(Ui.inspector.ui_objects) do
+		if o.__name == "UiGroup" then
+			return
+		end
+
 		if x > o.x and x < o.x + o.w and y > o.y and y < o.y + o.h then
 			o.click()
 		end

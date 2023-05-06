@@ -57,4 +57,9 @@ function Input:draw()
 		self.w,
 		self.h
 	)
+	love.graphics.print(
+		tostring(self.value),
+		self.x + self.padding.left,
+		self.y + self.font:getHeight(self.label) + 5 + self.padding.top
+	)
 end
