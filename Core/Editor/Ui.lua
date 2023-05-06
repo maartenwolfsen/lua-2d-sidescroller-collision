@@ -63,7 +63,8 @@ Ui.load = function()
 							right = 10,
 							bottom = 5,
 							left = 10
-						}
+						},
+						tostring(type(value))
 					)
 
 					input:onClick(function()
@@ -210,6 +211,27 @@ Ui.mousePress = function(x, y, button)
 		else
 			if x > o.x and x < o.x + o.w and y > o.y and y < o.y + o.h then
 				return o.click()
+			end
+		end
+	end
+end
+
+Ui.keyPress = function(key, scancode, isrepeat)
+	for index, o in pairs(Ui.inspector.ui_objects) do
+		if o.__name == "UiGroup" then
+			for index, o_item in pairs(o.children) do
+				if o_item.__name == "Input"
+					and o_item.focus then
+					if key == "backspace" then
+						o_item.value = tostring(o_item.value):sub(1, -2)
+					elseif string.len(key) <= 1 then
+						if o_item.type == "string" and string.match(key, "[a-zA-Z]") then
+							o_item.value = o_item.value .. key
+						elseif o_item.type == "number" and string.match(key, "[0-9]") then
+							o_item.value = tonumber(tostring(o_item.value) .. tostring(key))
+						end
+					end
+				end
 			end
 		end
 	end

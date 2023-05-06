@@ -72,6 +72,14 @@ function love.mousepressed(x, y, button)
 	Ui.mousePress(x, y, button)
 end
 
+function love.keypressed(key, scancode, isrepeat)
+   if key == "escape" then
+      love.event.quit()
+   end
+
+   Ui.keyPress(key, scancode, isrepeat)
+end
+
 function love.run()
     if love.math then
         love.math.setRandomSeed(os.time())
