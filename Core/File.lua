@@ -8,3 +8,10 @@ File.read = function(file)
 
     return content
 end
+
+File.write = function(file, object)
+    local f = io.open(file, "w")
+
+    f:write(object)
+    f:close()
+end

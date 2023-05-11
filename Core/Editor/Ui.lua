@@ -47,11 +47,12 @@ Ui.load = function()
 			end
 			local margin = 0
 
-			for index, component in pairs(Ui.inspector.selected_object.components) do
+			for component_i, component in pairs(Ui.inspector.selected_object.components) do
 				local selected_ui_objects = {}
 				local margin_item = margin
 
 				for property, value in pairs(component) do
+					print(index)
 					local input = Input:new(
 						property,
 						value,
@@ -64,7 +65,10 @@ Ui.load = function()
 							bottom = 5,
 							left = 10
 						},
-						tostring(type(value))
+						tostring(type(value)),
+						index,
+						component_i,
+						property
 					)
 
 					input:onClick(function()
@@ -92,7 +96,7 @@ Ui.load = function()
 				table.insert(
 					Ui.inspector.ui_objects,
 					UiGroup:new(
-						index,
+						component_i,
 						selected_ui_objects
 					)
 				)
@@ -204,7 +208,6 @@ Ui.mousePress = function(x, y, button)
 					and x < o_item.x + o_item.w
 					and y > o_item.y + 20
 					and y < o_item.y + o_item.h + 20 then
-					print("test")
 					return o_item.click()
 				end
 			end
@@ -224,6 +227,21 @@ Ui.keyPress = function(key, scancode, isrepeat)
 					and o_item.focus then
 					if key == "backspace" then
 						o_item.value = tostring(o_item.value):sub(1, -2)
+					elseif key == "return" then
+						for ui_i, ui_o in pairs(Ui.objects) do
+							if ui_i == o_item.bind then
+								for c_i, c_o in pairs(ui_o.components) do
+									if c_i == o_item.component then
+										for p_i, p_o in pairs(c_o) do
+											Ui.objects[ui_i].components[c_i][p_i] = o_item.value
+										end
+									end
+								end
+							end
+						end
+						
+						Map.save(Ui.objects)
+						o_item.focus = false
 					elseif string.len(key) <= 1 then
 						if o_item.type == "string" and string.match(key, "[a-zA-Z]") then
 							o_item.value = o_item.value .. key

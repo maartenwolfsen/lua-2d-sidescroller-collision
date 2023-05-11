@@ -8,3 +8,16 @@ Map.getObjects = function()
 	
 	return map.main.objects
 end
+
+Map.save = function(objects)
+	File.write(
+		"data/map.json",
+		json.encode(
+			{
+				main = {
+					objects = objects
+				}
+			}
+		)
+	)
+end

@@ -2,7 +2,7 @@ Input = {}
 Input.__index = Input
 Input.__name = "Input"
 
-function Input:new(label, value, x, y, w, padding, inputType)
+function Input:new(label, value, x, y, w, padding, inputType, bind, component, property)
 	local input = {}
 
 	setmetatable(input, Input)
@@ -17,6 +17,9 @@ function Input:new(label, value, x, y, w, padding, inputType)
 	input.value = value
 	input.focus = false
 	input.type = inputType
+	input.bind = bind
+	input.component = component
+	input.property = property
 
 	table.insert(
 		Ui,
